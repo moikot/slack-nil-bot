@@ -1,4 +1,6 @@
 # Slack Nil Bot
+[![Build Status](https://travis-ci.com/moikot/slack-nil-bot.svg?branch=master)](https://travis-ci.com/moikot/slack-nil-bot)
+[![Go Report Card](https://goreportcard.com/badge/github.com/moikot/slack-nil-bot)](https://goreportcard.com/report/github.com/moikot/slack-nil-bot)
 
 Nil bot does nothing except keeping WebSocket connection with Slack.
 
