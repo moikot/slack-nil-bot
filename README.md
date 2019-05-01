@@ -9,7 +9,7 @@ Nil bot does nothing except keeping WebSocket connection with Slack.
 You can run it as a Docker container on a Google VM with Docker.
 
 ```shell
-docker run -d -e SPY_BOT_TOKEN=[token] moikot/slack-nil-bot
+docker run -d -e BOT_TOKEN=[token] moikot/slack-nil-bot
 ```
 
 If you've got Golang environment and Dep, you can build it from source and run.
@@ -21,5 +21,5 @@ cd slack-nil-bot
 
 dep ensure -vendor-only
 
-export export SPY_BOT_TOKEN=[token]; go run .
+export export BOT_TOKEN=[token]; go run .
 ```

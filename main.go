@@ -15,7 +15,7 @@ func getEnv(name string) string {
 }
 
 func main() {
-	token := getEnv("SPY_BOT_TOKEN")
+	token := getEnv("BOT_TOKEN")
 	api := slack.New(token)
 	rtm := api.NewRTM()
 
