@@ -1,15 +1,10 @@
-# This is a weird way of telling Travis to use the fast container-based test
-# runner instead of the slow VM-based runner.
 sudo: required
-dist: xenial
+dist: bionic
 
 language: go
 
-# Only the last two Go releases are supported by the Go team with security
-# updates. Any older versions be considered deprecated. Don't bother testing
-# with them.
 go:
-- 1.11.x
+  - 1.12.x
 
 services:
   - docker
@@ -17,12 +12,8 @@ services:
 env:
   global:
     - DOCKER_PLATFORMS="linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8"
-    - DOCKER_TAG="${TRAVIS_TAG}"
-    - DOCKER_CLI_EXPERIMENTAL=enabled
     - APP_FOLDER=/go/src/github.com/moikot/slack-nil-bot/
-    - DOCKER_VERSION=5:18.09.4~3-0~ubuntu-xenial
 
-# Only clone the most recent commit.
 git:
   depth: 1
 
@@ -33,8 +24,9 @@ script:
   # Restore packages using moikot/golang-dep
   - >-
     docker run --rm -v $(pwd):${APP_FOLDER} -w ${APP_FOLDER}
+    -u $(id -u ${USER}):$(id -g ${USER})
     moikot/golang-dep ensure -vendor-only
-  # Run all the tests and report the coverage for all the packages
+  # Run all the tests and report the coverage
   - go test -covermode=count -coverprofile=profile.cov -coverpkg=./... ./...
   - $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
 
@@ -45,23 +37,23 @@ before_deploy:
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - sudo apt-get update
   - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+  # Get scripts for building multi-architectural Docker images and manifests
+  - id=$(docker create moikot/mua-docker-tools)
+  - docker cp $id:/scripts.sh /tmp/mua-scripts.sh
+  - docker rm -v $id
 
 deploy:
   provider: script
   script: >-
-    bash -c "
-    ./.travis/build.sh build
-    ${APP_FOLDER}
-    ${DOCKER_IMAGE}
-    ${DOCKER_TAG}
-    ${DOCKER_PLATFORMS} &&
-    ./.travis/deploy.sh pushImages
-    ${DOCKER_IMAGE}
-    ${DOCKER_TAG}
-    ${DOCKER_PLATFORMS} &&
-    ./.travis/deploy.sh pushDescription
-    ${DOCKER_IMAGE}
-    README.md"
+    bash -c "/tmp/mua-scripts.sh build_images
+    ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG} ${DOCKER_PLATFORMS}
+    --build-arg APP_FOLDER=${APP_FOLDER} &&
+    /tmp/mua-scripts.sh push_images
+    ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG} ${DOCKER_PLATFORMS}
+    ${DOCKER_USERNAME} ${DOCKER_PASSWORD} &&
+    /tmp/mua-scripts.sh push_readme
+    ${TRAVIS_REPO_SLUG} README.md
+    ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
   on:
     tags: true
 
